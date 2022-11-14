@@ -5,7 +5,7 @@
 
 How the simulation looks :
 
-![](supermarket_simulation.gif)
+![](https://github.com/padawanabhi/Supermarket_markov_simulation/blob/main/Supermarket_simulation.gif)
 
 
 In case you use the code and have problems, please feel free to reach out. Thanks
