@@ -3,6 +3,7 @@
 
 ## The project is still in the works. 
 
+How the simulation looks :
 
 ![](supermarket_simulation.gif)
 
