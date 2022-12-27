@@ -6,11 +6,11 @@ import os
 import numpy as np
 import cv2
 import logging
+import warnings
 import random
 import pandas as pd
 import matplotlib.pyplot as plt
 from pandas.plotting import table
-from colorama import Fore
 from customer import Customer
 from required_constants import (location_dict, TILE_SIZE, trans, CUSTOMER_PRESENT_FILE, 
                             CUSTOMER_PER_SECTION, sections, customer_images, fake, 
@@ -21,25 +21,29 @@ from required_constants import (location_dict, TILE_SIZE, trans, CUSTOMER_PRESEN
 #####################   SUPERMARKET   #############################
 
     
-
-
+warnings.filterwarnings("ignore")
+STRT_TIME = customer_present_df.index.min()
 
 class Supermarket:
     """manages multiple Customer instances that are currently in the market.
     """
 
-    def __init__(self, start_time, sections, image, locations, no_customers, section_customer_dict):        
+    def __init__(self, start_time=STRT_TIME, sections=sections, image=None, locations=location_dict,
+                    customer_present_table=customer_present_df, section_customer_dict=customer_per_section_dict):        
         # a list of Customer objects
         self._customers = [Customer(name = fake.name(), trans_matrix=trans, 
                                     budget=random.randint(50, 150), image=random.choice(customer_images))]
         self._current_time = start_time
         self._sections = sections
         self._original_image = image
-        self._temp_image = self._original_image.copy()
+        if self._original_image != None:
+            self._temp_image = self._original_image.copy()
+        else:
+            self._temp_image = image
         self._locations = locations
         self._last_choice = None
         self._location_choice = None
-        self._no_customers = no_customers
+        self._customer_present = customer_present_table
         self._customer_in_sections = section_customer_dict
         self._revenue = 0
 
@@ -51,7 +55,7 @@ class Supermarket:
         """
         with open('./data/final_data/simulated_day.csv', 'a') as file:
             for customer in self._customers:
-                if customer._state != None:
+                if customer._is_active:
                     file.write(self._current_time, customer._name, customer._state)
 
     def find_and_add_customer(self):
@@ -65,7 +69,8 @@ class Supermarket:
                     row = self._location_choice[0]*TILE_SIZE
                     col = self._location_choice[1]*TILE_SIZE
                     self._last_choice = self._location_choice
-                    self._temp_image[row:row+TILE_SIZE, col:col+TILE_SIZE] = customer._image
+                    if self._original_image != None:
+                        self._temp_image[row:row+TILE_SIZE, col:col+TILE_SIZE] = customer._image
 
     def draw(self, frame):
         """
@@ -139,7 +144,7 @@ class Supermarket:
     def add_new_customers(self) -> None:
         """randomly creates new customers.
         """
-        customer_present = int(self._no_customers.loc[self._current_time][0])
+        customer_present = int(self._customer_present.loc[self._current_time][0])
         if len(self._customers) < customer_present:
             for _ in range((customer_present - len(self._customers)) + 1):
                 self._customers.append(Customer(name = fake.name(), trans_matrix=trans, 
@@ -151,8 +156,8 @@ class Supermarket:
         """
         for customer in self._customers:
             active_list = []
-            if customer._is_active:
-                active_list.append(customer)
+            if not customer._is_active:
+                active_list.remove(customer)
         self._customers = active_list
 
         
