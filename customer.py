@@ -5,7 +5,7 @@ from required_constants import trans, sections, Section, customer_images, fake
 
 class Customer:
     '''Customer for the supermarket simulation'''
-    def __init__(self, name, trans_matrix, budget, image):
+    def __init__(self, name: str='John Doe', trans_matrix=trans, budget: int=100, image=customer_images[0]):
         self._name = name
         self._state = None
         self._transition_matrix = trans_matrix
@@ -38,11 +38,12 @@ class Customer:
 
 if __name__ == "__main__":
 
-    customer = Customer(fake.name(), trans, 1000, random.choice(customer_images))
-    print(sections)
-    print(np.array(trans.loc['checkout']).shape)
-    print(np.array(sections).shape)
+    customer1 = Customer(fake.name(), trans, 1000, random.choice(customer_images))
+    customer2 = Customer(fake.name(), trans, 1000, random.choice(customer_images))
+    customer3 = Customer(fake.name(), trans, 1000, random.choice(customer_images))
+    customer4 = Customer()
 
-    for _ in range(20):
-        print(customer)
-        customer.next_state()
+    for customer in [customer1, customer2, customer3, customer4]:
+        while customer._is_active:
+            print(customer)
+            customer.next_state()

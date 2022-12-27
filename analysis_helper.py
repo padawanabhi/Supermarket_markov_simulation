@@ -1,23 +1,45 @@
+"""_summary_
+
+Returns:
+    _type_: _description_
+"""
 import os
-import numpy as np
+from datetime import time
 import pandas as pd
-from datetime import date, time
+
+# pylint: disable=C0301
 
 DEFAULT_EXIT_TIME = time(21, 51)
 
 
-def add_unique_id(dataframe)-> pd.DataFrame:
+def add_unique_id(dataframe: pd.DataFrame)-> pd.DataFrame:
+    """Adds column with a unique identifier for each customer in the dataframe
 
-    '''Add unique id for each customer in the dataframe'''
+    Args:
+        dataframe (pd.DataFrame): A Dataframe
 
-    dataframe.sort_index(inplace=True)
-    dataframe['unique_id'] = (dataframe.customer_no.astype(str) + '.' + dataframe.index.day_of_week.astype(str)).astype(float)
+    Returns:
+        pd.DataFrame: A Dataframe
+    """
+    try:
+        dataframe.sort_index(inplace=True)
+        dataframe['unique_id'] = (dataframe.customer_no.astype(str) + \
+                        '.' + dataframe.index.day_of_week.astype(str)).astype(float)
+    except:
+        print('The unique id could not be added')
+        
     return dataframe
 
 
-def complete_checkout(dataframe) -> pd.DataFrame:
+def complete_checkout(dataframe: pd.DataFrame) -> pd.DataFrame:
+    """Add checkout for customers who have not yet checked out at 21:51 hrs to the DataFrame.
 
-    '''Add checkout to customers who have not yet checkout out'''
+    Args:
+        dataframe (pd.DataFrame): Initial dataframe with customer data
+
+    Returns:
+        pd.DataFrame: _description_
+    """
 
     checked_out = dataframe[dataframe.location == 'checkout'][['customer_no']]
     date = dataframe.index.date[0]
@@ -26,11 +48,11 @@ def complete_checkout(dataframe) -> pd.DataFrame:
     for customer in dataframe.customer_no.unique():
         if customer not in checked_out.customer_no.unique():
             unchecked.append(customer)
-    
-    unchecked_df = pd.DataFrame({'timestamp': [timestamp]*len(unchecked),
-                                'customer_no': unchecked, 
+
+    unchecked_df = pd.DataFrame({'timestamp': [timestamp]*len(unchecked), \
+                                'customer_no': unchecked, \
                                 'location': ['checkout']*len(unchecked)})
-    
+
     unchecked_df.set_index('timestamp', inplace=True)
 
     checkout_completed_df = pd.concat([dataframe, unchecked_df], axis=0)
@@ -39,17 +61,29 @@ def complete_checkout(dataframe) -> pd.DataFrame:
     return checkout_completed_df
 
 
-def add_missing_time(dataframe) -> pd.DataFrame:
+def add_missing_time(dataframe: pd.DataFrame) -> pd.DataFrame:
+    """Add the missing time steps for each customer to the dataframe.
+    Args:
+        dataframe (pd.DataFrame): A dataframe
 
-    '''Add missing time for each customer between entering and exiting the store and also add the locaation for that time.'''
-
+    Returns:
+        pd.DataFrame: A dataframe
+    """
     new_df = dataframe.groupby('customer_no')[['location']].resample('T').fillna(method="ffill").reindex()
     final_df = new_df.reset_index(level=['customer_no', 'timestamp']).sort_values(['timestamp', 'customer_no']).set_index('timestamp')
     final_df.sort_index(inplace=True)
     return final_df
 
 
-def combine_data(filepath):
+def combine_data(filepath: str) -> pd.DataFrame:
+    """_summary_
+
+    Args:
+        filepath (str): Path to the customer data csv files
+
+    Returns:
+        pd.DataFrame: DataFrame with data for the whole week.
+    """
     df_list = []
     for file in os.listdir(filepath):
         if file.endswith(".csv"):
@@ -60,4 +94,3 @@ def combine_data(filepath):
             df_list.append(data)
     data_combined = pd.concat(df_list, sort=True)
     return data_combined
-
