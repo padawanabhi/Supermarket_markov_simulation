@@ -3,6 +3,7 @@
 import time
 import datetime
 import os
+import csv
 import numpy as np
 import cv2
 import logging
@@ -12,7 +13,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from pandas.plotting import table
 from customer import Customer
-from required_constants import (location_dict, TILE_SIZE, trans, CUSTOMER_PRESENT_FILE, 
+from required_constants import (location_dict, TILE_SIZE, trans, CUSTOMER_PRESENT_FILE, supermarket_image,
                             CUSTOMER_PER_SECTION, sections, customer_images, fake, 
                             customer_per_section_dict, price_dict, customer_present_df)
 
@@ -23,12 +24,13 @@ from required_constants import (location_dict, TILE_SIZE, trans, CUSTOMER_PRESEN
     
 warnings.filterwarnings("ignore")
 STRT_TIME = customer_present_df.index.min()
+END_TIME = customer_present_df.index.max()
 
 class Supermarket:
     """manages multiple Customer instances that are currently in the market.
     """
 
-    def __init__(self, start_time=STRT_TIME, sections=sections, image=None, locations=location_dict,
+    def __init__(self, start_time=STRT_TIME, sections=sections, image=supermarket_image, locations=location_dict,
                     customer_present_table=customer_present_df, section_customer_dict=customer_per_section_dict):        
         # a list of Customer objects
         self._customers = [Customer(name = fake.name(), trans_matrix=trans, 
@@ -36,10 +38,7 @@ class Supermarket:
         self._current_time = start_time
         self._sections = sections
         self._original_image = image
-        if self._original_image != None:
-            self._temp_image = self._original_image.copy()
-        else:
-            self._temp_image = image
+        self._temp_image = self._original_image.copy()
         self._locations = locations
         self._last_choice = None
         self._location_choice = None
@@ -56,7 +55,8 @@ class Supermarket:
         with open('./data/final_data/simulated_day.csv', 'a') as file:
             for customer in self._customers:
                 if customer._is_active:
-                    file.write(self._current_time, customer._name, customer._state)
+                    writer = csv.writer(file)
+                    writer.writerow([self._current_time, customer._name, customer._state])
 
     def find_and_add_customer(self):
         for customer in self._customers:
@@ -69,8 +69,7 @@ class Supermarket:
                     row = self._location_choice[0]*TILE_SIZE
                     col = self._location_choice[1]*TILE_SIZE
                     self._last_choice = self._location_choice
-                    if self._original_image != None:
-                        self._temp_image[row:row+TILE_SIZE, col:col+TILE_SIZE] = customer._image
+                    self._temp_image[row:row+TILE_SIZE, col:col+TILE_SIZE] = customer._image
 
     def draw(self, frame):
         """
@@ -155,10 +154,10 @@ class Supermarket:
         """removes every customer that is not active any more.
         """
         for customer in self._customers:
-            active_list = []
+            # active_list = []
             if not customer._is_active:
-                active_list.remove(customer)
-        self._customers = active_list
+                self._customers.remove(customer)
+        # self._customers = active_list
 
         
 
@@ -166,16 +165,14 @@ class Supermarket:
 if __name__ == "__main__":
 
     background = np.zeros((584, 704, 3), np.uint8) + 255 # Make background white
-    supermarket_image = cv2.imread('./images/supermarket.png')
-    start_time = customer_present_df.index.min()
-    supermarket = Supermarket(start_time, sections, supermarket_image,
+    supermarket = Supermarket(STRT_TIME, sections, supermarket_image,
                              location_dict, customer_present_df, customer_per_section_dict)
-    print(f"start time is {start_time}")
-    print(f"end time is {customer_present_df.index.max()}")
+    print(f"start time is {STRT_TIME}")
+    print(f"end time is {END_TIME}")
 
-    while supermarket._current_time <= customer_present_df.index.max():
+    while supermarket._current_time < END_TIME:
         try:
-            time.sleep(1)
+            time.sleep(0.1)
             frame = background.copy()
             supermarket.find_and_add_customer()
             for customer in supermarket._customers:
@@ -188,8 +185,9 @@ if __name__ == "__main__":
             if key == 113: # 'q' key
                 break
             cv2.imshow("frame", frame)
-            supermarket.remove_inactive_customers()
+#            supermarket.write_customers_to_file()
             supermarket.add_new_customers()
+            supermarket.remove_inactive_customers()
             supermarket.reset_supermarket()
         except KeyboardInterrupt:
             print('Simulation was stopped by user')
