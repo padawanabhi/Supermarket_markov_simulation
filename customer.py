@@ -1,6 +1,6 @@
 import numpy as np
 import random
-from required_constants import trans, sections, Section, customer_images, fake
+from required_constants import trans, sections, Section, customer_images, fake, FIRST_SECTION, first_section
 
 
 class Customer:
@@ -27,7 +27,7 @@ class Customer:
         Propagates the customer to the next state.
         '''
         if self._state == None:
-            self._state = np.random.choice(a=np.array(sections), p=np.array(trans.loc['checkout']))
+            self._state = np.random.choice(a=np.array(first_section), p=FIRST_SECTION['unique_id'])
             return 0
         elif self._state != 'checkout':
             self._state = np.random.choice(a=np.array(sections), p=trans.loc[self._state])

@@ -8,7 +8,9 @@ fake = Faker()
 
 TILE_SIZE = 32
 
-CUSTOMER_PRESENT_FILE = './data/final_data/customers_per_min.csv'
+FIRST_SECTION = pd.read_csv('./data/final_data/first_section.csv')
+
+CUSTOMER_PRESENT_FILE = './data/final_data/average_customer_per_min.csv'
 
 CUSTOMER_PER_SECTION = './data/final_data/customers_per_section.csv'
 
@@ -16,6 +18,8 @@ customer_present_df = pd.read_csv(CUSTOMER_PRESENT_FILE, parse_dates=True, index
 
 
 trans = pd.read_csv('./data/final_data/transition_matrix.csv', index_col=0)
+
+supermarket_image = cv2.imread('./images/supermarket.png')
 
 
 customer_images = []
@@ -74,6 +78,8 @@ class Section(Enum):
     spices = 4
 
 sections = [sec.name for sec in Section]
+
+first_section = sections[1:]
 
 
 location_dict = {
